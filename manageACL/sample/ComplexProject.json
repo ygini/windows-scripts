@@ -1,0 +1,28 @@
+{
+		"1-Etude": {
+			"rw": ["CORP\\EquipeEtude"],
+			"ro": ["CORP\\GestionQualite"]
+		},
+		"2-Realisation": {
+			"rw": ["CORP\\ConduiteDeProjet"],
+			"ro": ["CORP\\EquipeEtude", "CORP\\GestionQualite"]
+		},
+		"3-Livraison": {
+			"rw": ["CORP\\EquipeEtude", "CORP\\ConduiteDeProjet"],
+			"ro": ["CORP\\GestionQualite"]
+		},
+		"A-Juridique": {
+			"EchangesDePreuves": {
+				"rw": ["CORP\\EquipeEtude", "CORP\\ConduiteDeProjet", "CORP\\Juridique"],
+				"ro": ["CORP\\GestionQualite"]
+			},
+			"AffaireEnCours": {
+				"rw": ["CORP\\Juridique"],
+				"ro": []
+			},
+		},
+		"B-DocumentsDivers": {
+			"rw": ["CORP\\EquipeEtude", "CORP\\ConduiteDeProjet", "CORP\\Juridique"],
+			"ro": ["CORP\\GestionQualite"]
+		}
+}
