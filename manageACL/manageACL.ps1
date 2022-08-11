@@ -1,7 +1,7 @@
 ﻿param (
     [string]$baseFolder = $( Read-Host "Input base folder path, please" ),
     [string]$jsonConfig = $( Read-Host "Input json config path, please" ),
-    [string]$itAdminGroup = "CORP\IT_ADM"
+    [string]$itAdminGroup = "MEDINCELL\Grp_IT_ADM"
  )
 
 $accountITAdminGroup = New-Object System.Security.Principal.NTAccount("$itAdminGroup")
@@ -17,7 +17,7 @@ Set-Privilege (new-object Pscx.Interop.TokenPrivilege "SeRestorePrivilege", $tru
 Set-Privilege (new-object Pscx.Interop.TokenPrivilege "SeBackupPrivilege", $true) #Necessary to bypass Traverse Checking
 Set-Privilege (new-object Pscx.Interop.TokenPrivilege "SeTakeOwnershipPrivilege", $true) #Necessary to override FilePermissions & take Ownership
 
-function manageACL($folderPath, $withInerithence, $readOnlyGroups, $readAndWriteGroups) {
+function manageACL($folderPath, $withInerithence, $readOnlyGroups, $modifyGroups) {
     Write-Host "- Managing ACL for $folderPath"
 
     if ( -not (Test-Path $folderPath) ) {
@@ -38,7 +38,8 @@ function manageACL($folderPath, $withInerithence, $readOnlyGroups, $readAndWrite
     $propagationFlag 
     $accessType = [System.Security.AccessControl.AccessControlType]::Allow
     $readOnly = [System.Security.AccessControl.FileSystemRights]"ReadAndExecute" 
-    $readAndWrite = [System.Security.AccessControl.FileSystemRights]"Modify" 
+    $modify = [System.Security.AccessControl.FileSystemRights]"Modify" 
+    $write = [System.Security.AccessControl.FileSystemRights]"Write" 
     $fullControl = [System.Security.AccessControl.FileSystemRights]"FullControl" 
 
     if ($withInerithence) {
@@ -73,13 +74,21 @@ function manageACL($folderPath, $withInerithence, $readOnlyGroups, $readAndWrite
         }
     }
 
-    if ( $readAndWriteGroups -ne $null ) { 
-        foreach($readAndWriteGroup in $readAndWriteGroups) {
-            if ( $readAndWriteGroup -ne $null ) {
-                Write-Host "-- Add read and write access to $readAndWriteGroup"
-                $accountForReadAndWrite = New-Object System.Security.Principal.NTAccount("$readAndWriteGroup") 
+    if ( $modifyGroups -ne $null ) { 
+        foreach($modifyGroup in $modifyGroups) {
+            if ( $modifyGroup -ne $null ) {
+                Write-Host "-- Add read and write access to $modifyGroup"
+                $accountForReadAndWrite = New-Object System.Security.Principal.NTAccount("$modifyGroup") 
 
-                $aceObject = New-Object System.Security.AccessControl.FileSystemAccessRule($accountForReadAndWrite, $readAndWrite, $inheritanceFlag, $propagationFlag, $accessType)
+                $aceObject = New-Object System.Security.AccessControl.FileSystemAccessRule($accountForReadAndWrite, $modify, $inheritanceFlag, [System.Security.AccessControl.PropagationFlags]::InheritOnly, $accessType)
+
+                $aclObject.AddAccessRule($aceObject)
+
+                $aceObject = New-Object System.Security.AccessControl.FileSystemAccessRule($accountForReadAndWrite, $readOnly, [System.Security.AccessControl.InheritanceFlags]::None, [System.Security.AccessControl.PropagationFlags]::NoPropagateInherit, $accessType)
+
+                $aclObject.AddAccessRule($aceObject)
+
+                $aceObject = New-Object System.Security.AccessControl.FileSystemAccessRule($accountForReadAndWrite, $write, [System.Security.AccessControl.InheritanceFlags]::None, [System.Security.AccessControl.PropagationFlags]::NoPropagateInherit, $accessType)
 
                 $aclObject.AddAccessRule($aceObject)
             }
